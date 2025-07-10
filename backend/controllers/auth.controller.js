@@ -1,37 +1,45 @@
+import bcryptjs from "bcryptjs"
 import User from "../models/user.model.js"
-// import bcrypt from "bcryptjs"
 import { errorHandler } from "../utils/error.js"
 import jwt from "jsonwebtoken"
-import bcryptjs from "bcryptjs"
-
 
 export const signup = async (req, res, next) => {
-    const { username, email, password } = req.body
+  const { username, email, password } = req.body
 
-    if (!username ||
-        !email ||
-        !password ||
-        username === "" ||
-        email === "" ||
-        password === "") {
-        return next(errorHandler(400, "All fields are required"))
-    }
+  if (
+    !username ||
+    !email ||
+    !password ||
+    username === "" ||
+    email === "" ||
+    password === ""
+  ) {
+    return next(errorHandler(400, "All fields are required"))
+  }
 
-    const hashedPassword = bcrypt.hashSync(password, 10)
+  // check if the user already exists
+  const existingUser = await User.findOne({ email })
 
-    const newUser = new User({
-        username,
-        email,
-        password: hashedPassword,
-    })
+  if (existingUser) {
+    return next(errorHandler(409, "User already exist with this email!"))
+  }
 
-    try {
-        await newUser.save()
+  const hashedPassword = bcryptjs.hashSync(password, 10)
 
-        res.json("Signup Successful")
-    } catch (error) {
-        next(error)
-    }
+  const newUser = new User({
+    username,
+    email,
+    password: hashedPassword,
+  })
+  // console.log(newUser,"newUsernewUser")
+
+  try {
+    await newUser.save()
+
+    res.json("Signup successful")
+  } catch (error) {
+    next(error)
+  }
 }
 
 export const signin = async (req, res, next) => {
